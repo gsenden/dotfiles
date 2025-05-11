@@ -3,9 +3,9 @@
 # Exit on error
 set -e
 
-# Check if pipx is installed
-if ! command -v pipx &> /dev/null; then
-    echo "pipx is not installed. Please run 04-install-pip.sh first."
+# Check if Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "Homebrew is not installed. Please run 02-install-homebrew.sh first."
     exit 1
 fi
 
@@ -16,9 +16,9 @@ if command -v ansible &> /dev/null; then
     exit 0
 fi
 
-# Install Ansible using pipx
+# Install Ansible using Homebrew
 echo "Installing Ansible..."
-pipx install ansible
+brew install ansible
 
 # Verify installation
 echo "Verifying Ansible installation..."
