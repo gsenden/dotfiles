@@ -13,16 +13,26 @@ fi
 if command -v pip3 &> /dev/null; then
     echo "pip is already installed"
     pip3 --version
-    exit 0
+else
+    # Install Python and pip using Homebrew
+    echo "Installing Python and pip..."
+    brew install python
+
+    # Verify pip installation
+    echo "Verifying pip installation..."
+    pip3 --version
 fi
 
-# Install Python and pip using Homebrew
-echo "Installing Python and pip..."
-brew install python
+# Check if pipx is installed
+if ! command -v pipx &> /dev/null; then
+    echo "Installing pipx..."
+    brew install pipx
+    pipx ensurepath
+    echo "pipx has been installed and added to PATH"
+else
+    echo "pipx is already installed"
+fi
 
-# Verify installation
-echo "Verifying pip installation..."
-pip3 --version
-
-echo "pip has been successfully installed!"
-echo "You can use pip3 to install Python packages" 
+echo "Python package management tools have been successfully installed!"
+echo "You can use pip3 to install Python packages"
+echo "You can use pipx to install Python applications" 
