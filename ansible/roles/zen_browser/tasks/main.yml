@@ -1,0 +1,26 @@
+---
+- name: Ensure flatpak is installed
+  apt:
+    name: flatpak
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Add Flathub repository
+  command: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  args:
+    creates: /var/lib/flatpak/repo/flathub
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Zen Browser via Flatpak
+  command: flatpak install -y flathub app.zen_browser.zen
+  args:
+    creates: /var/lib/flatpak/app/app.zen_browser.zen
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Zen Browser via Homebrew
+  homebrew_cask:
+    name: zenbrowser
+    state: present
+  when: ansible_os_family == "Darwin" 
