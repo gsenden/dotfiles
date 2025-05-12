@@ -9,6 +9,11 @@ if ! command -v ansible &> /dev/null; then
     exit 1
 fi
 
+# Install libcanberra
+echo "Installing libcanberra..."
+sudo apt-get update
+sudo apt-get install -y libcanberra-gtk-module libcanberra-gtk3-module
+
 # Run the Ansible playbook
 echo "Installing Zen Browser using Ansible..."
 ansible-playbook -i ansible/inventory.ini ansible/install_zen.yml
