@@ -1,6 +1,0 @@
----
-- name: Install Zen Browser
-  hosts: localhost
-  become: true
-  roles:
-    - zen_browser 

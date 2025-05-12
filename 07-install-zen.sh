@@ -3,19 +3,17 @@
 # Exit on error
 set -e
 
-# Check if Ansible is installed
-if ! command -v ansible &> /dev/null; then
-    echo "Ansible is not installed. Please run 05-install-ansible.sh first."
-    exit 1
-fi
+echo "Installing Zen Browser..."
 
-# Install libcanberra
-echo "Installing libcanberra..."
-sudo apt-get update
-sudo apt-get install -y libcanberra-gtk-module libcanberra-gtk3-module
+# Add Flathub and install Zen Browser
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user -y flathub app.zen_browser.zen
 
-# Run the Ansible playbook
-echo "Installing Zen Browser using Ansible..."
-ansible-playbook -i ansible/inventory.ini ansible/install_zen.yml
+# Remove existing alias and add new one
+sed -i '/alias zen=/d' ~/.bash_aliases
+echo 'alias zen="flatpak run app.zen_browser.zen"' >> ~/.bash_aliases
+source ~/.bash_aliases
 
-echo "Zen Browser installation completed!" 
+echo "Zen Browser has been installed successfully!"
+echo "You can now run it by typing 'zen' in your terminal."
+echo "Please restart your terminal or run 'source ~/.bash_aliases' to use the alias." 
