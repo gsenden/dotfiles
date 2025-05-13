@@ -62,6 +62,13 @@ hc keybind $Mod-Control-Down    resize down +$resizestep
 hc keybind $Mod-Control-Up      resize up +$resizestep
 hc keybind $Mod-Control-Right   resize right +$resizestep
 
+# WIP auto monitor config
+sh ~/dotfiles/herbstluftwm/auto-monitor-config.sh
+# currently with an additional 4k screen to edit videos on
+# hc set_monitors 1920x1080+0+0 1110x1440+1920+0 2900x1400+3030+40 1110x1440+5930+0 3840x2160+7040+0
+# only main monitor
+hc set_monitors 1110x1440+0+0 2900x1400+1110+40 1110x1440+4010+0
+
 # tags
 tag_names=( {1..9} )
 tag_keys=( {1..9} 0 )
