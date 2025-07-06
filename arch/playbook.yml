@@ -8,7 +8,7 @@
   tasks:
       
     - name: Load package configuration
-      include_vars: "{{ ansible_env.HOME }}/mydotfiles/config/packages.yml"
+      include_vars: "{{ ansible_env.HOME }}/mydotfiles/arch/packages.yml"
 
     - name: Display selected monitoring applications
       debug:
@@ -36,11 +36,11 @@
 
     - name: Get all available monitoring applications from config
       set_fact:
-        all_monitoring_apps: "{{ packages.monitoring_apps }}"
+        all_monitoring_apps: "{{ available_monitoring_apps }}"
 
     - name: Get all available browsers from config
       set_fact:
-        all_browsers: "{{ packages.browsers }}"
+        all_browsers: "{{ available_browsers }}"
 
     - name: Remove unselected monitoring applications
       shell: yay -Rns --noconfirm {{ item }}

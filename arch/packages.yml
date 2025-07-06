@@ -1,0 +1,17 @@
+---
+# Arch Linux package configuration
+# This file defines packages that are available and tested on Arch Linux/EndeavourOS
+# Package names should match those available in official repos or AUR
+
+available_monitoring_apps:
+  - htop
+  - btop
+  - atop
+  - glances
+
+available_browsers:
+  - firefox
+  - chromium
+  - brave
+  - vivaldi
+  - zen

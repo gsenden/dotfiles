@@ -15,6 +15,14 @@ cd "$DOTFILES_DIR"
 # Run interactive selections first (no sudo needed)
 echo "🔧 Selecting applications..."
 
+# Load available packages from config
+echo "📋 Loading available packages from arch/packages.yml..."
+MONITORING_PACKAGES=$(awk '/^available_monitoring_apps:/{flag=1; next} /^[a-zA-Z]/{flag=0} flag && /^  - /{print $2}' arch/packages.yml | tr '\n' ' ')
+BROWSER_PACKAGES=$(awk '/^available_browsers:/{flag=1; next} /^[a-zA-Z]/{flag=0} flag && /^  - /{print $2}' arch/packages.yml | tr '\n' ' ')
+
+echo "Available monitoring apps: $MONITORING_PACKAGES"
+echo "Available browsers: $BROWSER_PACKAGES"
+
 # Load previously installed selections if they exist
 PREV_MONITORING=""
 PREV_BROWSERS=""
@@ -34,19 +42,23 @@ if [[ -t 0 ]] && [[ -t 1 ]]; then
     # Interactive mode - show selection menus
     echo "Select your monitoring applications:"
     if [ -n "$PREV_MONITORING" ]; then
-        ./scripts/option_selector.sh "Monitoring Applications" htop btop atop glances --preselect "$PREV_MONITORING"
+        ./scripts/option_selector.sh "Monitoring Applications" $MONITORING_PACKAGES --preselect "$PREV_MONITORING"
     else
-        ./scripts/option_selector.sh "Monitoring Applications" htop btop atop glances --preselect btop
+        # Use first package as default
+        DEFAULT_MONITORING=$(echo $MONITORING_PACKAGES | awk '{print $1}')
+        ./scripts/option_selector.sh "Monitoring Applications" $MONITORING_PACKAGES --preselect "$DEFAULT_MONITORING"
     fi
-    MONITORING_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo '["btop"]')
+    MONITORING_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo "[\"$(echo $MONITORING_PACKAGES | awk '{print $1}')\"]")
     
     echo "Select your web browsers:"
     if [ -n "$PREV_BROWSERS" ]; then
-        ./scripts/option_selector.sh "Web Browsers" firefox chromium brave vivaldi zen --preselect "$PREV_BROWSERS"
+        ./scripts/option_selector.sh "Web Browsers" $BROWSER_PACKAGES --preselect "$PREV_BROWSERS"
     else
-        ./scripts/option_selector.sh "Web Browsers" firefox chromium brave vivaldi zen --preselect vivaldi
+        # Use first package as default
+        DEFAULT_BROWSER=$(echo $BROWSER_PACKAGES | awk '{print $1}')
+        ./scripts/option_selector.sh "Web Browsers" $BROWSER_PACKAGES --preselect "$DEFAULT_BROWSER"
     fi
-    BROWSERS_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo '["vivaldi"]')
+    BROWSERS_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo "[\"$(echo $BROWSER_PACKAGES | awk '{print $1}')\"]")
 else
     # Non-interactive mode - use previous selections or defaults
     echo "Running in non-interactive mode..."
@@ -54,16 +66,18 @@ else
         MONITORING_JSON="[\"$(echo "$PREV_MONITORING" | sed 's/,/","/g')\"]"
         echo "Using previous monitoring apps: $PREV_MONITORING"
     else
-        MONITORING_JSON='["btop"]'
-        echo "Using default monitoring apps: btop"
+        DEFAULT_MONITORING=$(echo $MONITORING_PACKAGES | awk '{print $1}')
+        MONITORING_JSON="[\"$DEFAULT_MONITORING\"]"
+        echo "Using default monitoring apps: $DEFAULT_MONITORING"
     fi
     
     if [ -n "$PREV_BROWSERS" ]; then
         BROWSERS_JSON="[\"$(echo "$PREV_BROWSERS" | sed 's/,/","/g')\"]"
         echo "Using previous browsers: $PREV_BROWSERS"
     else
-        BROWSERS_JSON='["vivaldi"]'
-        echo "Using default browsers: vivaldi"
+        DEFAULT_BROWSER=$(echo $BROWSER_PACKAGES | awk '{print $1}')
+        BROWSERS_JSON="[\"$DEFAULT_BROWSER\"]"
+        echo "Using default browsers: $DEFAULT_BROWSER"
     fi
 fi
 

@@ -26,7 +26,7 @@ cd "$DOTFILES_DIR"
 echo "🏗️  Running bootstrap..."
 if command -v pacman >/dev/null 2>&1; then
     echo "📦 Detected Arch based distro"
-    DOTFILES_DIR="$DOTFILES_DIR" ./bootstrap/arch.sh
+    DOTFILES_DIR="$DOTFILES_DIR" ./arch/bootstrap.sh
 else
     echo "❌ Unsupported distribution"
     exit 1
@@ -34,14 +34,14 @@ fi
 
 # Run Ansible (idempotent by design)
 echo "⚙️  Configuring system with Ansible..."
-if [ -f "ansible/playbook.yml" ]; then
+if [ -f "arch/playbook.yml" ]; then
     # Check if we have selection data from bootstrap
     if [ -f "/tmp/ansible_selections.yml" ]; then
         echo "📋 Using selections from bootstrap..."
-        ansible-playbook ansible/playbook.yml --extra-vars "@/tmp/ansible_selections.yml"
+        ansible-playbook arch/playbook.yml --extra-vars "@/tmp/ansible_selections.yml"
     else
         echo "⚠️  No selections found, running with defaults..."
-        ansible-playbook ansible/playbook.yml
+        ansible-playbook arch/playbook.yml
     fi
 else
     echo "⚠️  No Ansible playbook found, skipping..."
