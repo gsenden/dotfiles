@@ -1,12 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔧 Starting Arch bootstrap..."
-
-# Ensure cleanup happens even on script exit
-trap 'rm -rf /tmp/yay' EXIT
-
-echo "🏗️  EndeavourOS/Arch bootstrap..."
+echo "📦 Starting package selection and management..."
 
 # Use DOTFILES_DIR if set, otherwise fallback to default
 DOTFILES_DIR=${DOTFILES_DIR:-"$HOME/mydotfiles"}
@@ -91,34 +86,5 @@ for category in $CATEGORIES; do
     echo "Selected ${category}: $(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ')"
 done
 
-# Update system (requires sudo)
-echo "📦 Updating system..."
-sudo pacman -Syu --noconfirm
-
-# Install tools (requires sudo)
-echo "🔧 Installing bootstrap tools..."
-sudo pacman -S --needed --noconfirm \
-    git \
-    curl \
-    ansible \
-    stow \
-    python-pip \
-    base-devel
-
-# Install yay only if missing
-if ! command -v yay >/dev/null 2>&1; then
-    echo "📥 Installing yay AUR helper..."
-    cd /tmp
-    # Clean up any existing yay directory
-    rm -rf yay
-    git clone https://aur.archlinux.org/yay.git
-    cd yay
-    makepkg -si --noconfirm
-    cd "$DOTFILES_DIR"
-    # Cleanup handled by trap
-else
-    echo "✅ yay already installed"
-fi
-
-echo "✅ Bootstrap complete!"
+echo "✅ Package selection complete!"
 echo "📋 Selections saved for Ansible..."
