@@ -1,0 +1,49 @@
+---
+- name: Setup Arch Linux system
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Ensure system is up to date
+      pacman:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install essential packages
+      pacman:
+        name:
+          - curl
+        state: present
+
+    # - name: Install AUR packages using yay
+    #   command: yay -S --noconfirm google-chrome
+
+    # - name: Prompt user to select optional packages
+    #   vars_prompt:
+    #     - name: "optional_packages"
+    #       prompt: |
+    #         Select optional packages to install (use space to select multiple):
+    #         [ ] vim
+    #         [ ] tmux
+    #         [ ] htop
+    #         [ ] zsh
+    #       private: no
+
+    # - name: Install selected optional packages
+    #   pacman:
+    #     name: "{{ optional_packages }}"
+    #     state: present
+
+    - name: Prompt user to select monitoring tools
+      vars_prompt:
+        - name: "monitoring_tools"
+          prompt: |
+            Select monitoring tools to install (use space to select multiple):
+            [*] btop
+            [ ] htop
+            [ ] glances
+          private: no
+
+    - name: Install selected monitoring tools
+      pacman:
+        name: "{{ monitoring_tools }}"
+        state: present
