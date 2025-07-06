@@ -12,6 +12,11 @@ else
   exit 1
 fi
 
+# Map EndeavourOS to Arch
+if [ "$DISTRO" = "endeavouros" ]; then
+  DISTRO="arch"
+fi
+
 # Run the appropriate bootstrap script based on the distribution
 case $DISTRO in
   arch)
