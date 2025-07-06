@@ -14,36 +14,30 @@
           - curl
         state: present
 
-    # - name: Install AUR packages using yay
-    #   command: yay -S --noconfirm google-chrome
+    - name: Select system monitoring tools
+      options_prompt:
+        category: "System Monitoring"
+        options:
+          - htop
+          - btop
+          - neofetch
+          - tree
+          - ncdu
+        preselected:
+          - htop
+          - btop
+      register: monitoring_selection
+      delegate_to: localhost
 
-    # - name: Prompt user to select optional packages
-    #   vars_prompt:
-    #     - name: "optional_packages"
-    #       prompt: |
-    #         Select optional packages to install (use space to select multiple):
-    #         [ ] vim
-    #         [ ] tmux
-    #         [ ] htop
-    #         [ ] zsh
-    #       private: no
-
-    # - name: Install selected optional packages
-    #   pacman:
-    #     name: "{{ optional_packages }}"
-    #     state: present
-
-    - name: Prompt user to select monitoring tools
-      vars_prompt:
-        - name: "monitoring_tools"
-          prompt: |
-            Select monitoring tools to install (use space to select multiple):
-            [*] btop
-            [ ] htop
-            [ ] glances
-          private: no
+    - name: Show monitoring tools selection
+      debug:
+        msg: 
+          - "Category: {{ monitoring_selection.category }}"
+          - "Selected tools: {{ monitoring_selection.selected_options }}"
 
     - name: Install selected monitoring tools
-      pacman:
-        name: "{{ monitoring_tools }}"
-        state: present
+      shell: yay -S --needed --noconfirm {{ item }}
+      loop: "{{ monitoring_selection.selected_options }}"
+      when: monitoring_selection.selected_options | length > 0
+    
+

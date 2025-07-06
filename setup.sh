@@ -1,28 +1,55 @@
 #!/bin/bash
-
-# Exit on error
 set -e
 
-# Ensure script is run as root
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root"
-  exit 1
+DOTFILES_DIR="$HOME/mydotfiles"
+REPO_URL="https://github.com/gsenden/dotfiles.git"
+
+echo "🚀 Starting setup..."
+
+# Handle dotfiles directory
+if [ ! -d "$DOTFILES_DIR" ]; then
+    echo "📁 Cloning dotfiles repository..."
+    git clone "$REPO_URL" "$DOTFILES_DIR"
+elif [ -d "$DOTFILES_DIR/.git" ]; then
+    echo "📁 Updating existing dotfiles..."
+    cd "$DOTFILES_DIR"
+    git pull origin main
+else
+    echo "⚠️  Dotfiles directory exists but is not a git repo"
+    echo "Please remove $DOTFILES_DIR or fix manually"
+    exit 1
 fi
 
-# Clone the dotfiles repository if not already cloned
-if [ ! -d "$HOME/mydotfiles" ]; then
-  git clone https://github.com/gsenden/dotfiles.git "$HOME/mydotfiles"
+cd "$DOTFILES_DIR"
+
+# Run bootstrap (should be idempotent)
+echo "🏗️  Running bootstrap with sudo..."
+if command -v pacman >/dev/null 2>&1; then
+    echo "📦 Detected Arch based distro"
+    sudo ./bootstrap/arch.sh
+else
+    echo "❌ Unsupported distribution"
+    exit 1
 fi
 
-# Run the bootstrap script
-bash "$HOME/mydotfiles/bootstrap.sh"
+# Run Ansible (idempotent by design)
+echo "⚙️  Configuring system with Ansible..."
+if [ -f "ansible/playbook.yml" ]; then
+    ansible-playbook ansible/playbook.yml --ask-become-pass
+else
+    echo "⚠️  No Ansible playbook found, skipping..."
+fi
 
-# Run the Ansible playbook
-ansible-playbook "$HOME/mydotfiles/ansible/playbook.yml" --ask-become-pass
+# Setup dotfiles with Stow (handles conflicts gracefully)
+# echo "🔗 Setting up dotfiles with Stow..."
+# for dir in vim bash git; do
+#     if [ -d "$dir" ]; then
+#         echo "  📄 Stowing $dir..."
+#         stow --restow "$dir" 2>/dev/null || {
+#             echo "  ⚠️  Conflict with $dir, use 'stow --adopt $dir' to resolve"
+#         }
+#     fi
+# done
 
-# Use GNU Stow to manage dotfiles
-cd "$HOME/mydotfiles/dotfiles"
-stow -v -t "$HOME" *
-
-# Done
-echo "Setup complete!"
+echo "✅ Setup complete!"
+echo "💡 Rerun anytime to update your configuration"
