@@ -84,6 +84,11 @@ for category in $CATEGORIES; do
     clean_category=$(echo "$category" | sed 's/_apps$//')
     echo "${clean_category}_apps: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
     echo "Selected ${category}: $(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ')"
+    
+    # Save selections to memory files for next run
+    selected_packages=$(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ' | sed 's/ /,/g' | sed 's/^,//' | sed 's/,$//')
+    echo "$selected_packages" > "$HOME/.dotfiles_${category}"
+    echo "💾 Saved ${category} selections to memory: $selected_packages"
 done
 
 echo "✅ Package selection complete!"
