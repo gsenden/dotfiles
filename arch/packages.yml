@@ -12,6 +12,11 @@ available_monitoring_apps:
 available_browsers:
   - firefox
   - chromium
-  - brave
-  - vivaldi
-  - zen
+  - brave-bin
+  - vivaldi-bin
+  - zen-browser-bin
+
+available_gaming_apps:
+  - steam
+  - heroic-games-launcher-bin
+  - discord
