@@ -2,58 +2,87 @@
 - name: Setup Arch Linux system
   hosts: localhost
   vars:
-    # Default applications if no selection is provided
+    # Default applications if no selection is provided (will be overridden by selections)
     monitoring_apps: ["htop"]
-    browsers: ["firefox"]
+    browsers_apps: ["firefox"] 
+    gaming_apps: ["steam"]
   tasks:
       
     - name: Load package configuration
       include_vars: "{{ ansible_env.HOME }}/mydotfiles/arch/packages.yml"
 
-    - name: Display selected monitoring applications
-      debug:
-        msg: "Installing monitoring applications: {{ monitoring_apps }}"
+    - name: Get all package categories dynamically
+      set_fact:
+        package_categories: "{{ vars | select('match', '^available_.*') | map('regex_replace', '^available_', '') | list }}"
 
-    - name: Display selected browsers
+    - name: Display all selected applications
       debug:
-        msg: "Installing browsers: {{ browsers }}"
-      
+        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item + '_apps'] | default([]) }}"
+      loop: "{{ package_categories }}"
+      when: vars[item + '_apps'] is defined and vars[item + '_apps'] | length > 0
+
     - name: Ensure system is up to date
       pacman:
         update_cache: yes
         upgrade: yes
       become: yes
 
-    - name: Install selected monitoring applications
-      shell: yay -S --noconfirm {{ item }}
-      loop: "{{ monitoring_apps }}"
+    - name: Install monitoring applications
+      shell: |
+        if [[ "{{ item }}" == *"-bin" ]]; then
+          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
+          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
+            echo "Removing conflicting package: $BASE_NAME"
+            yay -Rns --noconfirm "$BASE_NAME" || true
+          fi
+        fi
+        yay -S --noconfirm {{ item }}
+      loop: "{{ monitoring_apps | default([]) }}"
       when: monitoring_apps is defined and monitoring_apps | length > 0
 
-    - name: Install selected browsers
-      shell: yay -S --noconfirm {{ item }}
-      loop: "{{ browsers }}"
-      when: browsers is defined and browsers | length > 0
+    - name: Install browsers applications
+      shell: |
+        if [[ "{{ item }}" == *"-bin" ]]; then
+          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
+          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
+            echo "Removing conflicting package: $BASE_NAME"
+            yay -Rns --noconfirm "$BASE_NAME" || true
+          fi
+        fi
+        yay -S --noconfirm {{ item }}
+      loop: "{{ browsers_apps | default([]) }}"
+      when: browsers_apps is defined and browsers_apps | length > 0
 
-    - name: Get all available monitoring applications from config
-      set_fact:
-        all_monitoring_apps: "{{ available_monitoring_apps }}"
-
-    - name: Get all available browsers from config
-      set_fact:
-        all_browsers: "{{ available_browsers }}"
+    - name: Install gaming applications
+      shell: |
+        if [[ "{{ item }}" == *"-bin" ]]; then
+          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
+          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
+            echo "Removing conflicting package: $BASE_NAME"
+            yay -Rns --noconfirm "$BASE_NAME" || true
+          fi
+        fi
+        yay -S --noconfirm {{ item }}
+      loop: "{{ gaming_apps | default([]) }}"
+      when: gaming_apps is defined and gaming_apps | length > 0
 
     - name: Remove unselected monitoring applications
       shell: yay -Rns --noconfirm {{ item }}
-      loop: "{{ all_monitoring_apps | difference(monitoring_apps | default([])) }}"
-      failed_when: false  # Don't fail if package is not installed
+      loop: "{{ available_monitoring_apps | difference(monitoring_apps | default([])) }}"
+      failed_when: false
 
-    - name: Remove unselected browsers
+    - name: Remove unselected browsers applications
       shell: yay -Rns --noconfirm {{ item }}
-      loop: "{{ all_browsers | difference(browsers | default([])) }}"
-      failed_when: false  # Don't fail if package is not installed
+      loop: "{{ available_browsers | difference(browsers_apps | default([])) }}"
+      failed_when: false
+
+    - name: Remove unselected gaming applications
+      shell: yay -Rns --noconfirm {{ item }}
+      loop: "{{ available_gaming_apps | difference(gaming_apps | default([])) }}"
+      failed_when: false
 
     - name: Save installed selections for next run
       shell: |
-        echo "{{ monitoring_apps | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_monitoring
-        echo "{{ browsers | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_browsers
-      when: (monitoring_apps is defined and monitoring_apps | length > 0) or (browsers is defined and browsers | length > 0)
+        echo "{{ monitoring_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_monitoring
+        echo "{{ browsers_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_browsers
+        echo "{{ gaming_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_gaming

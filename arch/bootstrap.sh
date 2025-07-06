@@ -17,79 +17,79 @@ echo "🔧 Selecting applications..."
 
 # Load available packages from config
 echo "📋 Loading available packages from arch/packages.yml..."
-MONITORING_PACKAGES=$(awk '/^available_monitoring_apps:/{flag=1; next} /^[a-zA-Z]/{flag=0} flag && /^  - /{print $2}' arch/packages.yml | tr '\n' ' ')
-BROWSER_PACKAGES=$(awk '/^available_browsers:/{flag=1; next} /^[a-zA-Z]/{flag=0} flag && /^  - /{print $2}' arch/packages.yml | tr '\n' ' ')
 
-echo "Available monitoring apps: $MONITORING_PACKAGES"
-echo "Available browsers: $BROWSER_PACKAGES"
+# Get all package categories dynamically
+CATEGORIES=$(grep '^available_' arch/packages.yml | sed 's/:$//' | sed 's/^available_//')
 
-# Load previously installed selections if they exist
-PREV_MONITORING=""
-PREV_BROWSERS=""
+echo "Found package categories: $CATEGORIES"
 
-if [ -f "$HOME/.dotfiles_monitoring" ]; then
-    PREV_MONITORING=$(cat "$HOME/.dotfiles_monitoring" 2>/dev/null | tr -d '\n')
-    echo "📋 Found previous monitoring selections: $PREV_MONITORING"
-fi
+# Initialize arrays to store package lists and selections
+declare -A PACKAGES
+declare -A PREVIOUS_SELECTIONS
+declare -A SELECTED_JSON
 
-if [ -f "$HOME/.dotfiles_browsers" ]; then
-    PREV_BROWSERS=$(cat "$HOME/.dotfiles_browsers" 2>/dev/null | tr -d '\n')
-    echo "📋 Found previous browser selections: $PREV_BROWSERS"
-fi
+# Load packages and previous selections for each category
+for category in $CATEGORIES; do
+    # Get packages for this category
+    PACKAGES[$category]=$(awk "/^available_${category}:/{flag=1; next} /^[a-zA-Z]/{flag=0} flag && /^  - /{print \$2}" arch/packages.yml | tr '\n' ' ')
+    
+    # Load previous selections if they exist
+    if [ -f "$HOME/.dotfiles_${category}" ]; then
+        PREVIOUS_SELECTIONS[$category]=$(cat "$HOME/.dotfiles_${category}" 2>/dev/null | tr -d '\n')
+        echo "📋 Found previous ${category} selections: ${PREVIOUS_SELECTIONS[$category]}"
+    else
+        PREVIOUS_SELECTIONS[$category]=""
+    fi
+    
+    echo "Available ${category}: ${PACKAGES[$category]}"
+done
 
 # Check if we're in an interactive terminal
 if [[ -t 0 ]] && [[ -t 1 ]]; then
-    # Interactive mode - show selection menus
-    echo "Select your monitoring applications:"
-    if [ -n "$PREV_MONITORING" ]; then
-        ./scripts/option_selector.sh "Monitoring Applications" $MONITORING_PACKAGES --preselect "$PREV_MONITORING"
-    else
-        # Use first package as default
-        DEFAULT_MONITORING=$(echo $MONITORING_PACKAGES | awk '{print $1}')
-        ./scripts/option_selector.sh "Monitoring Applications" $MONITORING_PACKAGES --preselect "$DEFAULT_MONITORING"
-    fi
-    MONITORING_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo "[\"$(echo $MONITORING_PACKAGES | awk '{print $1}')\"]")
-    
-    echo "Select your web browsers:"
-    if [ -n "$PREV_BROWSERS" ]; then
-        ./scripts/option_selector.sh "Web Browsers" $BROWSER_PACKAGES --preselect "$PREV_BROWSERS"
-    else
-        # Use first package as default
-        DEFAULT_BROWSER=$(echo $BROWSER_PACKAGES | awk '{print $1}')
-        ./scripts/option_selector.sh "Web Browsers" $BROWSER_PACKAGES --preselect "$DEFAULT_BROWSER"
-    fi
-    BROWSERS_JSON=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo "[\"$(echo $BROWSER_PACKAGES | awk '{print $1}')\"]")
+    # Interactive mode - show selection menus for each category
+    for category in $CATEGORIES; do
+        # Convert category name to readable format
+        readable_name=$(echo "$category" | sed 's/_/ /g' | sed 's/\b\w/\U&/g')
+        
+        echo "Select your ${readable_name}:"
+        if [ -n "${PREVIOUS_SELECTIONS[$category]}" ]; then
+            ./scripts/option_selector.sh "$readable_name" ${PACKAGES[$category]} --preselect "${PREVIOUS_SELECTIONS[$category]}"
+        else
+            # Use first package as default
+            default_package=$(echo ${PACKAGES[$category]} | awk '{print $1}')
+            ./scripts/option_selector.sh "$readable_name" ${PACKAGES[$category]} --preselect "$default_package"
+        fi
+        SELECTED_JSON[$category]=$(tail -n 1 /tmp/option_selector_result.json 2>/dev/null || echo "[\"$(echo ${PACKAGES[$category]} | awk '{print $1}')\"]")
+    done
 else
     # Non-interactive mode - use previous selections or defaults
     echo "Running in non-interactive mode..."
-    if [ -n "$PREV_MONITORING" ]; then
-        MONITORING_JSON="[\"$(echo "$PREV_MONITORING" | sed 's/,/","/g')\"]"
-        echo "Using previous monitoring apps: $PREV_MONITORING"
-    else
-        DEFAULT_MONITORING=$(echo $MONITORING_PACKAGES | awk '{print $1}')
-        MONITORING_JSON="[\"$DEFAULT_MONITORING\"]"
-        echo "Using default monitoring apps: $DEFAULT_MONITORING"
-    fi
-    
-    if [ -n "$PREV_BROWSERS" ]; then
-        BROWSERS_JSON="[\"$(echo "$PREV_BROWSERS" | sed 's/,/","/g')\"]"
-        echo "Using previous browsers: $PREV_BROWSERS"
-    else
-        DEFAULT_BROWSER=$(echo $BROWSER_PACKAGES | awk '{print $1}')
-        BROWSERS_JSON="[\"$DEFAULT_BROWSER\"]"
-        echo "Using default browsers: $DEFAULT_BROWSER"
-    fi
+    for category in $CATEGORIES; do
+        if [ -n "${PREVIOUS_SELECTIONS[$category]}" ]; then
+            SELECTED_JSON[$category]="[\"$(echo "${PREVIOUS_SELECTIONS[$category]}" | sed 's/,/","/g')\"]"
+            echo "Using previous ${category}: ${PREVIOUS_SELECTIONS[$category]}"
+        else
+            default_package=$(echo ${PACKAGES[$category]} | awk '{print $1}')
+            SELECTED_JSON[$category]="[\"$default_package\"]"
+            echo "Using default ${category}: $default_package"
+        fi
+    done
 fi
 
 # Save selections for Ansible to use
 echo "📝 Saving selections..."
+
+# Generate Ansible variables file dynamically
 cat > /tmp/ansible_selections.yml << EOF
-monitoring_apps: $MONITORING_JSON
-browsers: $BROWSERS_JSON
+# Dynamically generated package selections
 EOF
 
-echo "Selected monitoring apps: $(echo $MONITORING_JSON | tr -d '[]"' | tr ',' ' ')"
-echo "Selected browsers: $(echo $BROWSERS_JSON | tr -d '[]"' | tr ',' ' ')"
+for category in $CATEGORIES; do
+    # Remove '_apps' suffix if it already exists in category name to avoid double suffix
+    clean_category=$(echo "$category" | sed 's/_apps$//')
+    echo "${clean_category}_apps: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
+    echo "Selected ${category}: $(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ')"
+done
 
 # Update system (requires sudo)
 echo "📦 Updating system..."
