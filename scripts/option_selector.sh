@@ -14,6 +14,7 @@ shift
 # Parse arguments to find preselect flag and options
 preselected=()
 options=()
+json_only=false
 i=0
 args=("$@")
 
@@ -22,6 +23,9 @@ while [ $i -lt ${#args[@]} ]; do
         # Found preselect flag, next argument is the comma-separated list
         IFS=',' read -ra preselected <<< "${args[$((i + 1))]}"
         i=$((i + 2))  # Skip both --preselect and its value
+    elif [[ "${args[i]}" == "--json-only" ]]; then
+        json_only=true
+        i=$((i + 1))
     else
         # Regular option
         options+=("${args[i]}")
@@ -97,29 +101,37 @@ display_menu() {
 # Check if running in non-interactive mode (called by Ansible)
 if [[ -n "$ANSIBLE_MANAGED" ]] || [[ ! -t 0 ]]; then
     # Non-interactive mode - auto-select all options (or use preselected if any)
-    echo ""
-    echo "========================================="
-    echo "=== $category ==="
-    echo "========================================="
-    
-    if [ ${#preselected[@]} -gt 0 ]; then
-        echo "Running in non-interactive mode - using pre-selected options"
-        selected=("${preselected[@]}")
-        for item in "${selected[@]}"; do
-            echo "   ✅ Pre-selected $item"
-        done
-    else
-        echo "Running in non-interactive mode - selecting all options"
-        selected=("${options[@]}")
-        for item in "${options[@]}"; do
-            echo "   ✅ Auto-selected $item"
-        done
+    if [[ "$json_only" != true ]]; then
+        echo ""
+        echo "========================================="
+        echo "=== $category ==="
+        echo "========================================="
     fi
     
-    echo ""
-    echo "✅ Selected from $category: ${#selected[@]} options"
-    echo "   📋 List: ${selected[*]}"
-    echo ""
+    if [ ${#preselected[@]} -gt 0 ]; then
+        if [[ "$json_only" != true ]]; then
+            echo "Running in non-interactive mode - using pre-selected options"
+            for item in "${preselected[@]}"; do
+                echo "   ✅ Pre-selected $item"
+            done
+        fi
+        selected=("${preselected[@]}")
+    else
+        if [[ "$json_only" != true ]]; then
+            echo "Running in non-interactive mode - selecting all options"
+            for item in "${options[@]}"; do
+                echo "   ✅ Auto-selected $item"
+            done
+        fi
+        selected=("${options[@]}")
+    fi
+    
+    if [[ "$json_only" != true ]]; then
+        echo ""
+        echo "✅ Selected from $category: ${#selected[@]} options"
+        echo "   📋 List: ${selected[*]}"
+        echo ""
+    fi
 else
     # Interactive mode
     current_index=0
@@ -174,14 +186,22 @@ fi
 # Restore terminal (if needed)
 # stty echo icanon
 
-clear
-echo "✅ Selection complete for $category"
-echo "Selected: ${selected[*]}"
+if [[ "$json_only" != true ]]; then
+    clear
+    echo "✅ Selection complete for $category"
+    echo "Selected: ${selected[*]}"
+fi
 
 # Output JSON for Ansible
-echo "["
+JSON_OUTPUT="["
 for i in "${!selected[@]}"; do
-    echo -n "\"${selected[i]}\""
-    [ $i -lt $((${#selected[@]} - 1)) ] && echo ","
+    JSON_OUTPUT+="\"${selected[i]}\""
+    [ $i -lt $((${#selected[@]} - 1)) ] && JSON_OUTPUT+=","
 done
-echo "]"
+JSON_OUTPUT+="]"
+
+# Write JSON to a consistent temp file
+echo "$JSON_OUTPUT" > "/tmp/option_selector_result.json"
+
+# Also output to stdout for backward compatibility
+echo "$JSON_OUTPUT"

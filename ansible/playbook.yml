@@ -1,43 +1,38 @@
 ---
 - name: Setup Arch Linux system
   hosts: localhost
-  become: true
+  vars:
+    # Default applications if no selection is provided
+    monitoring_apps: ["htop"]
+    browsers: ["firefox"]
   tasks:
+      
+    - name: Display selected monitoring applications
+      debug:
+        msg: "Installing monitoring applications: {{ monitoring_apps }}"
+
+    - name: Display selected browsers
+      debug:
+        msg: "Installing browsers: {{ browsers }}"
+      
     - name: Ensure system is up to date
       pacman:
         update_cache: yes
         upgrade: yes
+      become: yes
 
-    - name: Install essential packages
-      pacman:
-        name:
-          - curl
-        state: present
+    - name: Install selected monitoring applications
+      shell: yay -S --noconfirm {{ item }}
+      loop: "{{ monitoring_apps }}"
+      when: monitoring_apps is defined and monitoring_apps | length > 0
 
-    - name: Select system monitoring tools
-      options_prompt:
-        category: "System Monitoring"
-        options:
-          - htop
-          - btop
-          - neofetch
-          - tree
-          - ncdu
-        preselected:
-          - htop
-          - btop
-      register: monitoring_selection
-      delegate_to: localhost
+    - name: Install selected browsers
+      shell: yay -S --noconfirm {{ item }}
+      loop: "{{ browsers }}"
+      when: browsers is defined and browsers | length > 0
 
-    - name: Show monitoring tools selection
-      debug:
-        msg: 
-          - "Category: {{ monitoring_selection.category }}"
-          - "Selected tools: {{ monitoring_selection.selected_options }}"
-
-    - name: Install selected monitoring tools
-      shell: yay -S --needed --noconfirm {{ item }}
-      loop: "{{ monitoring_selection.selected_options }}"
-      when: monitoring_selection.selected_options | length > 0
-    
-
+    - name: Save installed selections for next run
+      shell: |
+        echo "{{ monitoring_apps | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_monitoring
+        echo "{{ browsers | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_browsers
+      when: (monitoring_apps is defined and monitoring_apps | length > 0) or (browsers is defined and browsers | length > 0)
