@@ -3,8 +3,7 @@ set -e
 
 echo "📦 Starting package selection and management..."
 
-# Use DOTFILES_DIR if set, otherwise fallback to default
-DOTFILES_DIR=${DOTFILES_DIR:-"$HOME/mydotfiles"}
+# DOTFILES_DIR is set by setup.sh and exported
 cd "$DOTFILES_DIR"
 
 # Run interactive selections first (no sudo needed)
@@ -60,8 +59,9 @@ print(','.join(defaults) if defaults else '')
 ")
     
     # Determine the saved selections directory
-    if [ -d "../personal_dotfiles" ]; then
-        SAVED_SELECTIONS_DIR="../personal_dotfiles/.saved_selections"
+    PERSONAL_DOTFILES_DIR="$(dirname "$DOTFILES_DIR")/personal_dotfiles"
+    if [ -d "$PERSONAL_DOTFILES_DIR" ]; then
+        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/.saved_selections"
     else
         SAVED_SELECTIONS_DIR=".saved_selections"
     fi
@@ -194,8 +194,9 @@ for category in $CATEGORIES; do
     selected_packages=$(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | sed 's/, */,/g' | sed 's/^,//' | sed 's/,$//')
     
     # Determine the saved selections directory and create if it doesn't exist
-    if [ -d "../personal_dotfiles" ]; then
-        SAVED_SELECTIONS_DIR="../personal_dotfiles/.saved_selections"
+    PERSONAL_DOTFILES_DIR="$(dirname "$DOTFILES_DIR")/personal_dotfiles"
+    if [ -d "$PERSONAL_DOTFILES_DIR" ]; then
+        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/.saved_selections"
     else
         SAVED_SELECTIONS_DIR=".saved_selections"
     fi

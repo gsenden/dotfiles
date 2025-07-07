@@ -3,8 +3,7 @@ set -e
 
 echo "🚀 Starting Arch Linux setup..."
 
-# Use DOTFILES_DIR if set, otherwise fallback to default
-DOTFILES_DIR=${DOTFILES_DIR:-"$HOME/mydotfiles"}
+# Use DOTFILES_DIR from environment (set by setup.sh)
 cd "$DOTFILES_DIR"
 
 # Step 1: System Bootstrap - Install essential tools

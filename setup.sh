@@ -4,6 +4,9 @@ set -e
 DOTFILES_DIR="$HOME/mydotfiles"
 REPO_URL="https://github.com/gsenden/dotfiles.git"
 
+# Export DOTFILES_DIR so all scripts can use it
+export DOTFILES_DIR
+
 echo "🚀 Starting setup..."
 
 # Handle dotfiles directory
