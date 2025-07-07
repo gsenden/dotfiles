@@ -1,22 +1,34 @@
----
 # Arch Linux package configuration
 # This file defines packages that are available and tested on Arch Linux/EndeavourOS
 # Package names should match those available in official repos or AUR
 
 available_monitoring_apps:
-  - htop
   - btop
+  - htop
   - atop
   - glances
 
 available_browsers:
+  - vivaldi
   - firefox
   - chromium
   - brave-bin
-  - vivaldi-bin
   - zen-browser-bin
 
 available_gaming_apps:
   - steam
   - heroic-games-launcher-bin
   - discord
+
+available_terminal_apps:
+  - ghostty
+  - kitty
+  - alacritty
+  - terminator
+  - warp-terminal-bin
+  - waveterm-bin
+
+available_code_editors:
+  - visual-studio-code-insiders-bin
+  - code-oss-bin
+  - neovim

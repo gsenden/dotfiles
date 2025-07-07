@@ -80,14 +80,14 @@ cat > /tmp/ansible_selections.yml << EOF
 EOF
 
 for category in $CATEGORIES; do
-    # Remove '_apps' suffix if it already exists in category name to avoid double suffix
-    clean_category=$(echo "$category" | sed 's/_apps$//')
-    echo "${clean_category}_apps: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
+    # Use the category name as-is for the variable name since it already ends with '_apps'
+    echo "${category}: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
     echo "Selected ${category}: $(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ')"
     
-    # Save selections to memory files for next run
+    # Save selections to memory files for next run (remove _apps suffix for file names)
+    clean_category=$(echo "$category" | sed 's/_apps$//')
     selected_packages=$(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ' | sed 's/ /,/g' | sed 's/^,//' | sed 's/,$//')
-    echo "$selected_packages" > "$HOME/.dotfiles_${category}"
+    echo "$selected_packages" > "$HOME/.dotfiles_${clean_category}"
     echo "💾 Saved ${category} selections to memory: $selected_packages"
 done
 

@@ -4,8 +4,10 @@
   vars:
     # Default applications if no selection is provided (will be overridden by selections)
     monitoring_apps: ["htop"]
-    browsers_apps: ["firefox"] 
+    browsers: ["firefox"] 
     gaming_apps: ["steam"]
+    terminal_apps: []
+    code_editors: []
   tasks:
       
     - name: Load package configuration
@@ -17,9 +19,9 @@
 
     - name: Display all selected applications
       debug:
-        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item + '_apps'] | default([]) }}"
+        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item] | default([]) }}"
       loop: "{{ package_categories }}"
-      when: vars[item + '_apps'] is defined and vars[item + '_apps'] | length > 0
+      when: vars[item] is defined and vars[item] | length > 0
 
     - name: Ensure system is up to date
       pacman:
@@ -27,62 +29,57 @@
         upgrade: yes
       become: yes
 
-    - name: Install monitoring applications
+    - name: Install selected applications for all categories
       shell: |
-        if [[ "{{ item }}" == *"-bin" ]]; then
-          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
+        if [[ "{{ item.1 }}" == *"-bin" ]]; then
+          BASE_NAME=$(echo "{{ item.1 }}" | sed 's/-bin$//')
           if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
             echo "Removing conflicting package: $BASE_NAME"
             yay -Rns --noconfirm "$BASE_NAME" || true
           fi
         fi
-        yay -S --noconfirm {{ item }}
-      loop: "{{ monitoring_apps | default([]) }}"
-      when: monitoring_apps is defined and monitoring_apps | length > 0
+        yay -S --noconfirm {{ item.1 }}
+      loop: >
+        {%- set result = [] -%}
+        {%- for category in package_categories -%}
+          {%- if vars[category] is defined -%}
+            {%- for app in vars[category] -%}
+              {{- result.append([category, app]) or '' -}}
+            {%- endfor -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ result }}
+      when: item.1 is defined
 
-    - name: Install browsers applications
-      shell: |
-        if [[ "{{ item }}" == *"-bin" ]]; then
-          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
-          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
-            echo "Removing conflicting package: $BASE_NAME"
-            yay -Rns --noconfirm "$BASE_NAME" || true
-          fi
-        fi
-        yay -S --noconfirm {{ item }}
-      loop: "{{ browsers_apps | default([]) }}"
-      when: browsers_apps is defined and browsers_apps | length > 0
+    - name: Get packages to remove
+      set_fact:
+        packages_to_remove: >
+          {%- set result = [] -%}
+          {%- for category in package_categories -%}
+            {%- set available_var = 'available_' + category -%}
+            {%- if vars[available_var] is defined -%}
+              {%- for app in vars[available_var] -%}
+                {%- if vars[category] is not defined or app not in vars[category] -%}
+                  {{- result.append([category, app]) or '' -}}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ result }}
 
-    - name: Install gaming applications
-      shell: |
-        if [[ "{{ item }}" == *"-bin" ]]; then
-          BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
-          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
-            echo "Removing conflicting package: $BASE_NAME"
-            yay -Rns --noconfirm "$BASE_NAME" || true
-          fi
-        fi
-        yay -S --noconfirm {{ item }}
-      loop: "{{ gaming_apps | default([]) }}"
-      when: gaming_apps is defined and gaming_apps | length > 0
+    - name: Display packages to remove
+      debug:
+        msg: "Removing {{ item.0 | replace('_', ' ') }}: {{ item.1 }}"
+      loop: "{{ packages_to_remove }}"
+      when: packages_to_remove | length > 0
 
-    - name: Remove unselected monitoring applications
-      shell: yay -Rns --noconfirm {{ item }}
-      loop: "{{ available_monitoring_apps | difference(monitoring_apps | default([])) }}"
-      failed_when: false
-
-    - name: Remove unselected browsers applications
-      shell: yay -Rns --noconfirm {{ item }}
-      loop: "{{ available_browsers | difference(browsers_apps | default([])) }}"
-      failed_when: false
-
-    - name: Remove unselected gaming applications
-      shell: yay -Rns --noconfirm {{ item }}
-      loop: "{{ available_gaming_apps | difference(gaming_apps | default([])) }}"
-      failed_when: false
+    - name: Remove deselected applications for all categories
+      shell: yay -Rns --noconfirm {{ item.1 }} || true
+      loop: "{{ packages_to_remove }}"
+      when: packages_to_remove | length > 0
 
     - name: Save installed selections for next run
       shell: |
-        echo "{{ monitoring_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_monitoring
-        echo "{{ browsers_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_browsers
-        echo "{{ gaming_apps | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_gaming
+        {% for category in package_categories %}
+        echo "{{ vars[category] | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_{{ category | regex_replace('_apps$', '') }}
+        {% endfor %}
