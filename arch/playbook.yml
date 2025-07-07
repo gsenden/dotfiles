@@ -87,9 +87,9 @@
         # Determine the saved selections directory using the same logic as other scripts
         PERSONAL_DOTFILES_DIR="$(dirname "$DOTFILES_DIR")/personal_dotfiles"
         if [ -d "$PERSONAL_DOTFILES_DIR" ]; then
-          SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/.saved_selections"
+          SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/saved_selections"
         else
-          SAVED_SELECTIONS_DIR=".saved_selections"
+          SAVED_SELECTIONS_DIR="saved_selections"
         fi
         mkdir -p "$SAVED_SELECTIONS_DIR"
         {% for category in package_categories %}

@@ -61,9 +61,9 @@ print(','.join(defaults) if defaults else '')
     # Determine the saved selections directory
     PERSONAL_DOTFILES_DIR="$(dirname "$DOTFILES_DIR")/personal_dotfiles"
     if [ -d "$PERSONAL_DOTFILES_DIR" ]; then
-        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/.saved_selections"
+        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/saved_selections"
     else
-        SAVED_SELECTIONS_DIR=".saved_selections"
+        SAVED_SELECTIONS_DIR="saved_selections"
     fi
     
     # Load previous selections if they exist, otherwise use defaults
@@ -196,9 +196,9 @@ for category in $CATEGORIES; do
     # Determine the saved selections directory and create if it doesn't exist
     PERSONAL_DOTFILES_DIR="$(dirname "$DOTFILES_DIR")/personal_dotfiles"
     if [ -d "$PERSONAL_DOTFILES_DIR" ]; then
-        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/.saved_selections"
+        SAVED_SELECTIONS_DIR="$PERSONAL_DOTFILES_DIR/saved_selections"
     else
-        SAVED_SELECTIONS_DIR=".saved_selections"
+        SAVED_SELECTIONS_DIR="saved_selections"
     fi
     mkdir -p "$SAVED_SELECTIONS_DIR"
     
