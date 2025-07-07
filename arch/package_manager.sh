@@ -59,9 +59,16 @@ for pkg in packages:
 print(','.join(defaults) if defaults else '')
 ")
     
+    # Determine the saved selections directory
+    if [ -d "../personal_dotfiles" ]; then
+        SAVED_SELECTIONS_DIR="../personal_dotfiles/.saved_selections"
+    else
+        SAVED_SELECTIONS_DIR=".saved_selections"
+    fi
+    
     # Load previous selections if they exist, otherwise use defaults
-    if [ -f ".saved_selections/${category}" ]; then
-        PREVIOUS_SELECTIONS[$category]=$(cat ".saved_selections/${category}" 2>/dev/null | tr -d '\n')
+    if [ -f "${SAVED_SELECTIONS_DIR}/${category}" ]; then
+        PREVIOUS_SELECTIONS[$category]=$(cat "${SAVED_SELECTIONS_DIR}/${category}" 2>/dev/null | tr -d '\n')
         echo "📋 Found previous ${category} selections: ${PREVIOUS_SELECTIONS[$category]}"
     else
         PREVIOUS_SELECTIONS[$category]="${DEFAULT_PACKAGES[$category]}"
@@ -186,10 +193,15 @@ for category in $CATEGORIES; do
     # Save selections to memory files for next run
     selected_packages=$(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | sed 's/, */,/g' | sed 's/^,//' | sed 's/,$//')
     
-    # Create saved selections directory if it doesn't exist
-    mkdir -p .saved_selections
+    # Determine the saved selections directory and create if it doesn't exist
+    if [ -d "../personal_dotfiles" ]; then
+        SAVED_SELECTIONS_DIR="../personal_dotfiles/.saved_selections"
+    else
+        SAVED_SELECTIONS_DIR=".saved_selections"
+    fi
+    mkdir -p "$SAVED_SELECTIONS_DIR"
     
-    echo "$selected_packages" > ".saved_selections/${category}"
+    echo "$selected_packages" > "${SAVED_SELECTIONS_DIR}/${category}"
     echo "💾 Saved ${category} selections to memory: $selected_packages"
 done
 
