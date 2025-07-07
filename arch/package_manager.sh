@@ -179,8 +179,8 @@ cat > /tmp/ansible_selections.yml << EOF
 EOF
 
 for category in $CATEGORIES; do
-    # Use the category name as-is for the variable name since it already ends with '_apps'
-    echo "${category}: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
+    # Use different variable names to avoid conflicts with package definitions
+    echo "${category}_selected: ${SELECTED_JSON[$category]}" >> /tmp/ansible_selections.yml
     echo "Selected ${category}: $(echo ${SELECTED_JSON[$category]} | tr -d '[]"' | tr ',' ' ')"
     
     # Save selections to memory files for next run

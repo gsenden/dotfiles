@@ -19,9 +19,9 @@
 
     - name: Display all selected applications
       debug:
-        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item] | default([]) }}"
+        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item + '_selected'] | default([]) }}"
       loop: "{{ package_categories }}"
-      when: vars[item] is defined and vars[item] | length > 0
+      when: vars[item + '_selected'] is defined and vars[item + '_selected'] | length > 0
 
     - name: Ensure system is up to date
       pacman:
@@ -42,8 +42,8 @@
       loop: >
         {%- set result = [] -%}
         {%- for category in package_categories -%}
-          {%- if vars[category] is defined -%}
-            {%- for app in vars[category] -%}
+          {%- if vars[category + '_selected'] is defined -%}
+            {%- for app in vars[category + '_selected'] -%}
               {{- result.append([category, app]) or '' -}}
             {%- endfor -%}
           {%- endif -%}
@@ -56,13 +56,15 @@
         packages_to_remove: >
           {%- set result = [] -%}
           {%- for category in package_categories -%}
-            {%- set available_packages = vars[category + '_available'] | default(vars[category]) -%}
-            {%- set selected_packages = vars[category + '_selected'] | default(vars[category]) -%}
+            {%- set available_packages = vars[category] -%}
+            {%- set selected_packages = vars[category + '_selected'] | default([]) -%}
             {%- if available_packages is defined -%}
               {%- for pkg_info in available_packages -%}
-                {%- set pkg_name = pkg_info.package_name -%}
-                {%- if selected_packages is not defined or pkg_name not in selected_packages -%}
-                  {{- result.append([category, pkg_name]) or '' -}}
+                {%- if pkg_info.package_name is defined -%}
+                  {%- set pkg_name = pkg_info.package_name -%}
+                  {%- if pkg_name not in selected_packages -%}
+                    {{- result.append([category, pkg_name]) or '' -}}
+                  {%- endif -%}
                 {%- endif -%}
               {%- endfor -%}
             {%- endif -%}
@@ -84,5 +86,5 @@
       shell: |
         mkdir -p ../.saved_selections
         {% for category in package_categories %}
-        echo "{{ vars[category] | default([]) | join(',') }}" > ../.saved_selections/{{ category }}
+        echo "{{ vars[category + '_selected'] | default([]) | join(',') }}" > ../.saved_selections/{{ category }}
         {% endfor %}
