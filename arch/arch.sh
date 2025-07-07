@@ -9,7 +9,7 @@ cd "$DOTFILES_DIR"
 
 # Step 1: System Bootstrap - Install essential tools
 echo "🔧 Step 1: System Bootstrap"
-./arch/system_bootstrap.sh
+./arch/bootstrap.sh
 
 # Step 2: Package Selection and Management
 echo "📦 Step 2: Package Selection and Management"
