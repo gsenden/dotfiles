@@ -11,11 +11,11 @@
   tasks:
       
     - name: Load package configuration
-      include_vars: "{{ ansible_env.HOME }}/mydotfiles/arch/packages.yml"
+      include_vars: "packages.yml"
 
     - name: Get all package categories dynamically
       set_fact:
-        package_categories: "{{ vars | select('match', '^available_.*') | map('regex_replace', '^available_', '') | list }}"
+        package_categories: "{{ vars.keys() | select('match', '^(monitoring_apps|browsers|gaming_apps|terminal_apps|code_editors)$') | list }}"
 
     - name: Display all selected applications
       debug:
@@ -56,11 +56,13 @@
         packages_to_remove: >
           {%- set result = [] -%}
           {%- for category in package_categories -%}
-            {%- set available_var = 'available_' + category -%}
-            {%- if vars[available_var] is defined -%}
-              {%- for app in vars[available_var] -%}
-                {%- if vars[category] is not defined or app not in vars[category] -%}
-                  {{- result.append([category, app]) or '' -}}
+            {%- set available_packages = vars[category + '_available'] | default(vars[category]) -%}
+            {%- set selected_packages = vars[category + '_selected'] | default(vars[category]) -%}
+            {%- if available_packages is defined -%}
+              {%- for pkg_info in available_packages -%}
+                {%- set pkg_name = pkg_info.package_name -%}
+                {%- if selected_packages is not defined or pkg_name not in selected_packages -%}
+                  {{- result.append([category, pkg_name]) or '' -}}
                 {%- endif -%}
               {%- endfor -%}
             {%- endif -%}
@@ -80,6 +82,7 @@
 
     - name: Save installed selections for next run
       shell: |
+        mkdir -p ../.saved_selections
         {% for category in package_categories %}
-        echo "{{ vars[category] | default([]) | join(',') }}" > {{ ansible_env.HOME }}/.dotfiles_{{ category | regex_replace('_apps$', '') }}
+        echo "{{ vars[category] | default([]) | join(',') }}" > ../.saved_selections/{{ category }}
         {% endfor %}

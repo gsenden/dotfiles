@@ -1,34 +1,80 @@
+---
 # Arch Linux package configuration
 # This file defines packages that are available and tested on Arch Linux/EndeavourOS
-# Package names should match those available in official repos or AUR
+# Each package entry contains:
+#   - display_name: Human-readable name shown in the selector
+#   - package_name: Actual package name for installation
+#   - default: Whether this package should be pre-selected
 
-available_monitoring_apps:
-  - btop
-  - htop
-  - atop
-  - glances
+monitoring_apps:
+  - display_name: "Btop++ (Modern htop)"
+    package_name: "btop"
+    default: true
+  - display_name: "Htop (Classic process viewer)"
+    package_name: "htop"
+    default: false
+  - display_name: "Atop (Advanced process monitor)"
+    package_name: "atop"
+    default: false
+  - display_name: "Glances (Cross-platform monitor)"
+    package_name: "glances"
+    default: false
 
-available_browsers:
-  - vivaldi
-  - firefox
-  - chromium
-  - brave-bin
-  - zen-browser-bin
+browsers:
+  - display_name: "Vivaldi (Feature-rich browser)"
+    package_name: "vivaldi"
+    default: true
+  - display_name: "Firefox (Privacy-focused)"
+    package_name: "firefox"
+    default: false
+  - display_name: "Chromium (Open-source Chrome)"
+    package_name: "chromium"
+    default: false
+  - display_name: "Brave (Privacy & crypto)"
+    package_name: "brave-bin"
+    default: false
+  - display_name: "Zen Browser (Privacy-first)"
+    package_name: "zen-browser-bin"
+    default: false
 
-available_gaming_apps:
-  - steam
-  - heroic-games-launcher-bin
-  - discord
+gaming_apps:
+  - display_name: "Steam (Game platform)"
+    package_name: "steam"
+    default: true
+  - display_name: "Heroic Games Launcher (Epic/GOG)"
+    package_name: "heroic-games-launcher-bin"
+    default: true
+  - display_name: "Discord (Gaming chat)"
+    package_name: "discord"
+    default: true
 
-available_terminal_apps:
-  - ghostty
-  - kitty
-  - alacritty
-  - terminator
-  - warp-terminal-bin
-  - waveterm-bin
+terminal_apps:
+  - display_name: "Ghostty (Fast GPU terminal)"
+    package_name: "ghostty"
+    default: true
+  - display_name: "Kitty (GPU-accelerated)"
+    package_name: "kitty"
+    default: false
+  - display_name: "Alacritty (Rust terminal)"
+    package_name: "alacritty"
+    default: false
+  - display_name: "Terminator (Multiple panes)"
+    package_name: "terminator"
+    default: false
+  - display_name: "Warp Terminal (AI-powered)"
+    package_name: "warp-terminal-bin"
+    default: false
+  - display_name: "Wave Terminal (Modern)"
+    package_name: "waveterm-bin"
+    default: false
 
-available_code_editors:
-  - visual-studio-code-insiders-bin
-  - code-oss-bin
-  - neovim
+code_editors:
+  - display_name: "VS Code Insiders (Latest features)"
+    package_name: "visual-studio-code-insiders-bin"
+    default: true
+  - display_name: "VS Code OSS (Open source)"
+    package_name: "code-oss-bin"
+    default: false
+  - display_name: "Neovim (Modern Vim)"
+    package_name: "neovim"
+    default: false
