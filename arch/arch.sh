@@ -29,6 +29,3 @@ if [ -f "arch/playbook.yml" ]; then
 else
     echo "⚠️  No Ansible playbook found, skipping..."
 fi
-
-echo "✅ Arch Linux setup complete!"
-echo "🎉 Your system is ready to go!"
