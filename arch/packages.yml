@@ -67,6 +67,9 @@ terminal_apps:
   - display_name: "Wave Terminal (Modern)"
     package_name: "waveterm-bin"
     default: false
+  - display_name: "Bash completion (Bash enhancements)"
+    package_name: "bash-completion"
+    default: true
 
 code_editors:
   - display_name: "VS Code Insiders (Latest features)"
@@ -77,4 +80,29 @@ code_editors:
     default: false
   - display_name: "Neovim (Modern Vim)"
     package_name: "neovim"
+    default: false
+
+container_apps:
+  - display_name: "Docker (Container platform)"
+    package_name: "docker"
+    default: true
+  - display_name: "Docker Compose (Multi-container tool)"
+    package_name: "docker-compose"
+    default: true
+  - display_name: "Kubectl (Kubernetes CLI)"
+    package_name: "kubectl"
+    default: true
+  - display_name: "Terraform (Infrastructure as Code)"
+    package_name: "terraform"
+    default: true
+  
+office_apps:
+  - display_name: "LibreOffice (Full office suite)"
+    package_name: "libreoffice-fresh"
+    default: false
+  - display_name: "OnlyOffice (Document editor)"
+    package_name: "onlyoffice-bin"
+    default: true
+  - display_name: "WPS Office (Alternative suite)"
+    package_name: "wps-office"
     default: false
