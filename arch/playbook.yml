@@ -9,7 +9,13 @@
     terminal_apps: []
     code_editors: []
   tasks:
-      
+
+    - name: Ensure system is up to date
+      pacman:
+        update_cache: yes
+        upgrade: yes
+      become: yes
+
     - name: Load package configuration
       include_vars: 
         file: "packages.yml"
@@ -18,19 +24,7 @@
     - name: Get all package categories dynamically from loaded YAML
       set_fact:
         package_categories: "{{ package_config.keys() | list }}"
-
-    - name: Display all selected applications
-      debug:
-        msg: "Installing {{ item | replace('_', ' ') }}: {{ vars[item + '_selected'] | default([]) }}"
-      loop: "{{ package_categories }}"
-      when: vars[item + '_selected'] is defined and vars[item + '_selected'] | length > 0
-
-    - name: Ensure system is up to date
-      pacman:
-        update_cache: yes
-        upgrade: yes
-      become: yes
-
+    
     - name: Install selected applications for all categories
       shell: |
         if [[ "{{ item.1 }}" == *"-bin" ]]; then
@@ -97,3 +91,8 @@
         {% for category in package_categories %}
         echo "{{ vars[category + '_selected'] | default([]) | join(',') }}" > "$SAVED_SELECTIONS_DIR/{{ category }}"
         {% endfor %}
+
+    - name: Auto-stow dotfiles configurations
+      shell: bash scripts/auto_stow.sh --yes
+      args:
+        chdir: "{{ playbook_dir }}/.."
