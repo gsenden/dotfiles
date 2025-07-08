@@ -90,7 +90,7 @@ container_apps:
     package_name: "docker-compose"
     default: true
   - display_name: "Kubectl (Kubernetes CLI)"
-    package_name: "kubectl"
+    package_name: "kubectl-bin"
     default: true
   - display_name: "Terraform (Infrastructure as Code)"
     package_name: "terraform"
