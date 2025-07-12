@@ -25,26 +25,64 @@
             package_categories: "{{ package_config.keys() | list }}"
     
     - name: Install selected applications for all categories
-      shell: |
-        if [[ "{{ item.1 }}" == *"-bin" ]]; then
-          BASE_NAME=$(echo "{{ item.1 }}" | sed 's/-bin$//')
-          if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
-            echo "Removing conflicting package: $BASE_NAME"
-            yay -Rns --noconfirm "$BASE_NAME" || true
-          fi
-        fi
-        yay -S --noconfirm {{ item.1 }}
-      loop: >
-        {%- set result = [] -%}
-        {%- for category in package_categories -%}
-          {%- if vars[category + '_selected'] is defined -%}
-            {%- for app in vars[category + '_selected'] -%}
-              {{- result.append([category, app]) or '' -}}
+      block:
+        # First try with pacman module for repo packages
+        - name: Install repo packages
+          pacman:
+            name: "{{ item.1 }}"
+            state: present
+          become: yes
+          loop: >
+            {%- set result = [] -%}
+            {%- for category in package_categories -%}
+              {%- if vars[category + '_selected'] is defined -%}
+                {%- for app in vars[category + '_selected'] -%}
+                  {{- result.append([category, app]) or '' -}}
+                {%- endfor -%}
+              {%- endif -%}
             {%- endfor -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ result }}
-      when: item.1 is defined
+            {{ result }}
+          when: 
+            - item.1 is defined
+            - not (item.1 is search("-bin$") or item.1 is search("-git$"))
+          ignore_errors: yes
+          register: pacman_result
+        
+        # Then handle AUR packages and conflicts with shell
+        - name: Install AUR packages and handle conflicts
+          shell: |
+            # Check if package is already installed
+            if pacman -Qi "{{ item.1 }}" >/dev/null 2>&1; then
+              echo "ALREADY_INSTALLED: {{ item.1 }}"
+              exit 0
+            fi
+            
+            # Handle conflicts for -bin packages
+            if [[ "{{ item.1 }}" == *"-bin" ]]; then
+              BASE_NAME=$(echo "{{ item.1 }}" | sed 's/-bin$//')
+              if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
+                echo "REMOVING_CONFLICT: $BASE_NAME"
+                yay -Rns --noconfirm "$BASE_NAME" || true
+              fi
+            fi
+            
+            echo "INSTALLING: {{ item.1 }}"
+            yay -S --noconfirm {{ item.1 }}
+          register: install_result
+          changed_when: "'ALREADY_INSTALLED' not in install_result.stdout"
+          loop: >
+            {%- set result = [] -%}
+            {%- for category in package_categories -%}
+              {%- if vars[category + '_selected'] is defined -%}
+                {%- for app in vars[category + '_selected'] -%}
+                  {{- result.append([category, app]) or '' -}}
+                {%- endfor -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {{ result }}
+          when: 
+            - item.1 is defined
+            - (item.1 is search("-bin$") or item.1 is search("-git$") or (pacman_result.results is defined and pacman_result.results[loop.index0] is defined and pacman_result.results[loop.index0].failed|default(false)))
 
     - name: Get packages to remove
       set_fact:
@@ -67,9 +105,35 @@
           {{ result }}
 
     - name: Remove deselected applications for all categories
-      shell: yay -Rns --noconfirm {{ item.1 }} || true
-      loop: "{{ packages_to_remove }}"
-      when: packages_to_remove | length > 0
+      block:
+        # Try to remove with pacman module first
+        - name: Remove repo packages
+          pacman:
+            name: "{{ item.1 }}"
+            state: absent
+          become: yes
+          loop: "{{ packages_to_remove }}"
+          when: 
+            - packages_to_remove | length > 0
+            - not (item.1 is search("-bin$") or item.1 is search("-git$"))
+          ignore_errors: yes
+          register: pacman_remove_result
+        
+        # Fallback to yay for AUR packages or failed removals
+        - name: Remove AUR packages
+          shell: |
+            if pacman -Qi "{{ item.1 }}" >/dev/null 2>&1; then
+              echo "REMOVING: {{ item.1 }}"
+              yay -Rns --noconfirm {{ item.1 }}
+            else
+              echo "NOT_INSTALLED: {{ item.1 }}"
+            fi
+          register: remove_result
+          changed_when: "'REMOVING:' in remove_result.stdout"
+          loop: "{{ packages_to_remove }}"
+          when: 
+            - packages_to_remove | length > 0
+            - (item.1 is search("-bin$") or item.1 is search("-git$") or (pacman_remove_result.results is defined and pacman_remove_result.results[loop.index0] is defined and pacman_remove_result.results[loop.index0].failed|default(false)))
 
     - name: Save installed selections for next run
       shell: |
@@ -84,8 +148,10 @@
         {% for category in package_categories %}
         echo "{{ vars[category + '_selected'] | default([]) | join(',') }}" > "$SAVED_SELECTIONS_DIR/{{ category }}"
         {% endfor %}
+      changed_when: false
 
     - name: Auto-stow dotfiles configurations
       shell: bash scripts/auto_stow.sh --yes
       args:
         chdir: "{{ playbook_dir }}/.."
+      changed_when: false
