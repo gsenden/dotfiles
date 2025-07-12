@@ -16,14 +16,13 @@
         upgrade: yes
       become: yes
 
-    - name: Load package configuration
-      include_vars: 
-        file: "packages.yml"
-        name: package_config
-
-    - name: Get all package categories dynamically from loaded YAML
-      set_fact:
-        package_categories: "{{ package_config.keys() | list }}"
+    - name: Load package configuration and set categories
+      block:
+        - include_vars: 
+            file: "packages.yml"
+            name: package_config
+        - set_fact:
+            package_categories: "{{ package_config.keys() | list }}"
     
     - name: Install selected applications for all categories
       shell: |
@@ -66,12 +65,6 @@
             {%- endif -%}
           {%- endfor -%}
           {{ result }}
-
-    - name: Display packages to remove
-      debug:
-        msg: "Removing {{ item.0 | replace('_', ' ') }}: {{ item.1 }}"
-      loop: "{{ packages_to_remove }}"
-      when: packages_to_remove | length > 0
 
     - name: Remove deselected applications for all categories
       shell: yay -Rns --noconfirm {{ item.1 }} || true

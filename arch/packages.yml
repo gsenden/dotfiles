@@ -6,6 +6,17 @@
 #   - package_name: Actual package name for installation
 #   - default: Whether this package should be pre-selected
 
+general_purpose_apps:
+  - display_name: "CIFS utils (Network file sharing)"
+    package_name: "cifs-utils"
+    default: true
+  - display_name: "NFS utils (Network file sharing)"
+    package_name: "nfs-utils"
+    default: true
+  - display_name: "Hyprshot - Screenshot tool"
+    package_name: "hyprshot"
+    default: true
+
 monitoring_apps:
   - display_name: "Btop++ (Modern htop)"
     package_name: "btop"
@@ -47,6 +58,9 @@ gaming_apps:
   - display_name: "Discord (Gaming chat)"
     package_name: "discord"
     default: true
+  - display_name: "Lutris (Game manager)"
+    package_name: "lutris"
+    default: false
 
 terminal_apps:
   - display_name: "Ghostty (Fast GPU terminal)"
@@ -106,3 +120,5 @@ office_apps:
   - display_name: "WPS Office (Alternative suite)"
     package_name: "wps-office"
     default: false
+
+

@@ -93,9 +93,6 @@ display_menu() {
         
         echo "${prefix}${suffix} ${options[i]}"
     done
-    
-    echo ""
-    echo "Selected options: ${selected[*]}"
 }
 
 # Check if running in non-interactive mode (called by Ansible)
