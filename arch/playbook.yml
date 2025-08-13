@@ -32,16 +32,7 @@
             name: "{{ item.1 }}"
             state: present
           become: yes
-          loop: >
-            {%- set result = [] -%}
-            {%- for category in package_categories -%}
-              {%- if vars[category + '_selected'] is defined -%}
-                {%- for app in vars[category + '_selected'] -%}
-                  {{- result.append([category, app]) or '' -}}
-                {%- endfor -%}
-              {%- endif -%}
-            {%- endfor -%}
-            {{ result }}
+          loop: "{{ package_categories | map('extract', vars, '_selected') | select('defined') | sum(start=[]) | map('community.general.cartesian', [package_categories]) | sum(start=[]) }}"
           when: 
             - item.1 is defined
             - not (item.1 is search("-bin$") or item.1 is search("-git$"))
@@ -70,16 +61,7 @@
             yay -S --noconfirm {{ item.1 }}
           register: install_result
           changed_when: "'ALREADY_INSTALLED' not in install_result.stdout"
-          loop: >
-            {%- set result = [] -%}
-            {%- for category in package_categories -%}
-              {%- if vars[category + '_selected'] is defined -%}
-                {%- for app in vars[category + '_selected'] -%}
-                  {{- result.append([category, app]) or '' -}}
-                {%- endfor -%}
-              {%- endif -%}
-            {%- endfor -%}
-            {{ result }}
+          loop: "{{ package_categories | map('extract', vars, '_selected') | select('defined') | sum(start=[]) | map('community.general.cartesian', [package_categories]) | sum(start=[]) }}"
           when: 
             - item.1 is defined
             - (item.1 is search("-bin$") or item.1 is search("-git$") or (pacman_result.results is defined and pacman_result.results[loop.index0] is defined and pacman_result.results[loop.index0].failed|default(false)))
@@ -112,7 +94,7 @@
             name: "{{ item.1 }}"
             state: absent
           become: yes
-          loop: "{{ packages_to_remove }}"
+          loop: "{{ packages_to_remove | from_yaml }}"
           when: 
             - packages_to_remove | length > 0
             - not (item.1 is search("-bin$") or item.1 is search("-git$"))
@@ -130,10 +112,11 @@
             fi
           register: remove_result
           changed_when: "'REMOVING:' in remove_result.stdout"
-          loop: "{{ packages_to_remove }}"
+          loop: "{{ packages_to_remove | from_yaml }}"
           when: 
+            - item.1 is defined
             - packages_to_remove | length > 0
-            - (item.1 is search("-bin$") or item.1 is search("-git$") or (pacman_remove_result.results is defined and pacman_remove_result.results[loop.index0] is defined and pacman_remove_result.results[loop.index0].failed|default(false)))
+            - item.1 is search("-bin$") or item.1 is search("-git$")
 
     - name: Save installed selections for next run
       shell: |
