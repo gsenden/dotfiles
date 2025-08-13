@@ -1,0 +1,12 @@
+# Other k8s shorts
+kn() {
+  kubectl config set-context --current --namespace="$1"
+}
+
+_kn_completion() {
+  local cur_word="${COMP_WORDS[COMP_CWORD]}"
+  local namespaces
+  namespaces=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
+  COMPREPLY=( $(compgen -W "$namespaces" -- "$cur_word") )
+}
+complete -F _kn_completion kn

@@ -1,0 +1,7 @@
+# Required for Terraform provider and Scaleway CLI
+export SCW_ACCESS_KEY=SCW7V99Y6R5WP77CSNBC
+export SCW_SECRET_KEY=08d42a67-f797-4c70-8faa-5f8e09f2c950
+
+# Required for remote Terraform state
+export AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY
+export AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY
