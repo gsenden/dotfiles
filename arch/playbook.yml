@@ -23,48 +23,43 @@
             name: package_config
         - set_fact:
             package_categories: "{{ package_config.keys() | list }}"
-    
+      
     - name: Install selected applications for all categories
       block:
-        # First try with pacman module for repo packages
+        # Install repo packages with pacman
         - name: Install repo packages
           pacman:
-            name: "{{ item.1 }}"
+            name: "{{ repo_packages }}"
             state: present
           become: yes
-          loop: "{{ package_categories | map('extract', vars, '_selected') | select('defined') | sum(start=[]) | map('community.general.cartesian', [package_categories]) | sum(start=[]) }}"
-          when: 
-            - item.1 is defined
-            - not (item.1 is search("-bin$") or item.1 is search("-git$"))
+          when: repo_packages | length > 0
           ignore_errors: yes
           register: pacman_result
         
-        # Then handle AUR packages and conflicts with shell
+        # Install AUR packages with yay
         - name: Install AUR packages and handle conflicts
           shell: |
             # Check if package is already installed
-            if pacman -Qi "{{ item.1 }}" >/dev/null 2>&1; then
-              echo "ALREADY_INSTALLED: {{ item.1 }}"
+            if pacman -Qi "{{ item }}" >/dev/null 2>&1; then
+              echo "ALREADY_INSTALLED: {{ item }}"
               exit 0
             fi
             
             # Handle conflicts for -bin packages
-            if [[ "{{ item.1 }}" == *"-bin" ]]; then
-              BASE_NAME=$(echo "{{ item.1 }}" | sed 's/-bin$//')
+            if [[ "{{ item }}" == *"-bin" ]]; then
+              BASE_NAME=$(echo "{{ item }}" | sed 's/-bin$//')
               if pacman -Qi "$BASE_NAME" >/dev/null 2>&1; then
                 echo "REMOVING_CONFLICT: $BASE_NAME"
                 yay -Rns --noconfirm "$BASE_NAME" || true
               fi
             fi
             
-            echo "INSTALLING: {{ item.1 }}"
-            yay -S --noconfirm {{ item.1 }}
+            echo "INSTALLING: {{ item }}"
+            yay -S --noconfirm {{ item }}
           register: install_result
           changed_when: "'ALREADY_INSTALLED' not in install_result.stdout"
-          loop: "{{ package_categories | map('extract', vars, '_selected') | select('defined') | sum(start=[]) | map('community.general.cartesian', [package_categories]) | sum(start=[]) }}"
-          when: 
-            - item.1 is defined
-            - (item.1 is search("-bin$") or item.1 is search("-git$") or (pacman_result.results is defined and pacman_result.results[loop.index0] is defined and pacman_result.results[loop.index0].failed|default(false)))
+          loop: "{{ aur_packages }}"
+          when: aur_packages | length > 0
 
     - name: Get packages to remove
       set_fact:
